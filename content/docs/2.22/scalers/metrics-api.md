@@ -36,10 +36,14 @@ triggers:
 - `format` - One of the following formats: `json`, `xml`, `yaml`, `prometheus`. (Default: `json`, Optional)
 - `valueLocation` - The location of the metric value in the response payload. The value is format specific.
   * `json` - [GJSON path notation](https://github.com/tidwall/gjson#path-syntax) to refer to the field in the payload containing the metric value.
-  * `yaml`, `xml`, `prometheus` - implemented as dot-separated path algorithm for value parsing.
+  * `yaml`, `xml` - implemented as dot-separated path algorithm for value parsing.
     * `{foo: {bar: 42}}` - `foo.bar` will return 42
     * `{foo: [{bar: 42}]}` - `foo.0.bar` will return 42
-    * same syntax is used for `yaml`, `xml` and `prometheus` formats.
+    * same syntax is used for `yaml` and `xml` formats.
+  * `prometheus` - a PromQL [series selector](https://prometheus.io/docs/prometheus/latest/querying/basics/#time-series-selectors).
+    * `http_requests_total{code=~"5.."}` will return the value of the first series it matches
+    * `sum(http_requests_total{code=~"5.."})` will return the sum of every series it matches. Other PromQL, such as other aggregations, `by`, functions or `offset`, is rejected.
+    * A histogram or summary is read as the series Prometheus scrapes from it, so its `_count`, `_sum` and `_bucket` series can be selected: `sum(request_duration_seconds_count)` will return the observations of the histogram `request_duration_seconds` across all its series.
 
 - `targetValue` - Target value to scale on. When the metric provided by the API is equal or higher to this value, KEDA will start scaling out. When the metric is 0 or less, KEDA will scale down to 0. (This value can be a float)
 - `activationTargetValue` - Target value for activating the scaler. Learn more about activation [here](./../concepts/scaling-deployments.md#activating-and-scaling-thresholds).(Default: `0`, Optional, This value can be a float)
